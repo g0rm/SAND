@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+
+    <title>[SAND] Info</title>
+
+    <link rel='icon' href='favicon.ico' sizes='16x16 32x32' type='image/png'>
+    <meta name='description' content="A website for information on the Guild Wars 2 guild [SAND] - That's No Tornado">
+    <meta name='keywords' content='GW2,Guild Wars 2,Dry Top,SAND,guild'>
+
+    <link rel='stylesheet' type='text/css' href='css/main.css'/>
+</head>
+
+<body>
+<nav class='navbar navbar-inverse navbar-static-top'>
+    <div class='container'>
+        <div class='container-fluid'>
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class='navbar-header'>
+                <button type='button'
+                        class='navbar-toggle collapsed'
+                        data-toggle='collapse'
+                        data-target='#navbar-collapse-1'
+                        aria-expanded='false'>
+                    <span class='sr-only'>Toggle navigation</span>
+                    <span class='icon-bar'></span>
+                    <span class='icon-bar'></span>
+                    <span class='icon-bar'></span>
+                </button>
+                <a class='navbar-brand' href='index.html'>[SAND] That's No Tornado</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class='collapse navbar-collapse' id='navbar-collapse-1'>
+                <ul class='nav navbar-nav navbar-left'>
+                    <li><a href='calendar.html'>Events</a></li>
+                    <li><a href='social.html'>Social</a></li>
+                </ul>
+                <ul class='nav navbar-nav navbar-right'>
+                    <li><a href='dry-top-guide.html'>New to Dry Top?</a></li>
+                    <li class="active"><a href='about-us.html'>About the Guild</a></li>
+                    <li><a href='leadership.html'>Guild Leadership</a></li>
+                    <li><a href='recruitment.html'>Guild Recruitment</a></li>
+                    <li class='dropdown'>
+                        <a href='#' class='dropdown-toggle'
+                           data-toggle='dropdown'
+                           role='button'
+                           aria-haspopup='true' aria-expanded='false'>Site Info <span class='caret'></span></a>
+                        <ul class='dropdown-menu'>
+                            <li><a href='http://goo.gl/forms/6ndcBX7EYC'>Site Feedback</a></li>
+                            <li><a href='https://github.com/DryTopSAND'>Contribute Updates</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div> <!-- /.navbar-collapse -->
+        </div> <!-- /.container-fluid -->
+    </div>
+</nav>
+
+<canvas id="canvas" style="display: block; position: absolute;"></canvas>
+<div class='container'>
+    <div class='col-xs-12 text-center'>
+<form action="">
+  Enter your API key:
+  <input name="apikey" type="text" size="72">
+  <input type="button" value="Submit" onClick="getapikey(this.form)">
+</form>
+<div id="content"></div>
+<script>
+  var html = "<table><th>Weapon/Skin</th><th>Fossil</th><th>Achievement</th><th>Recipe</th><th>FossilInv</th></tr>";
+  var url = 'https://api.guildwars2.com/v2/';
+  var ID_ambite_collection = 1749;
+  var ID_nomad_inscription = 66638;
+  var ID_unidentified_insect = 66766;
+  var ID_pristine_sand_carved_cache = 67084;
+  var api = function(path, data) {
+    $.ajax({
+      type: 'GET',
+      data: data,
+      url: url+path,
+      async: false,
+      dataType: 'json',
+      success: function(json) { data = json; }
+    });
+    return data;
+  }
+  var go = function(apikey) {
+    document.getElementById("content").innerHTML = "Please wait - loading.";
+    var data = {};
+    // Get general information about achievement (bits, skins)
+    var ambrite_general = api("achievements.json", "ids=1749")[0];
+    // Get progress of specific player in the achievement
+    var achievement_progress = api("account/achievements.json", "access_token="+apikey);
+    for (var a in achievement_progress) {
+      if (achievement_progress[a]["id"] == 1749) {
+        var ambrite_progress = achievement_progress[a];
+      }
+    }
+    // Get information about collection skins
+    skin_ids = ambrite_general["bits"].map(function(s) {return s["id"];});
+    var skins_info = api("skins.json", "ids="+skin_ids.toString());
+    // I don't want to hard-code the weapons list here, so we find all
+    // Ambrite weapons by searching recipes using the Nomads inscription
+    recipes_using_nomad = api("recipes/search", "input="+ID_nomad_inscription);
+    recipes_using_nomad = api("recipes", "ids="+recipes_using_nomad.toString());
+    items_using_nomad = recipes_using_nomad.map(function(r) {return r["output_item_id"];});
+    items_using_nomad = api("items.json", "ids="+items_using_nomad)
+    // Filter out the weapons by their skins
+    weapons = [];
+    for (r in items_using_nomad) {
+      index = skin_ids.indexOf(items_using_nomad[r]["default_skin"])
+      if (index >= 0) {
+        skins_info[index]["weapon"] = weapons.length;
+        skins_info[index]["recipe"] = recipes_using_nomad[r];
+        weapons.push(items_using_nomad[r]);
+      }
+    }
+    // Find unlocked recipes
+    recipe_ids = skins_info.map(function(s) {
+        return s["recipe"]["id"];
+      });
+    recipes_known = api("account/recipes.json", "access_token="+apikey);
+    recipes_known = recipes_known.filter(function(r) {
+        return recipe_ids.indexOf(r) >= 0;
+      });
+    // Now find out which weapon needs which insect
+    ingredients = skins_info.map(function(g)
+                  { return g["recipe"]["ingredients"].map(function(i)
+                    { return i["item_id"];});}).toString();
+    ingredients = api("items.json", "ids="+ingredients);
+    fossils = []
+    for (i in ingredients) {
+      if (ingredients[i]["name"].match(/^Ambrite/)) {
+        fossils.push(ingredients[i]);
+      }
+    }
+    fossil_ids = fossils.map(function(f) {return f["id"];});
+
+    // Search account for insects
+    bank_inv = api("account/bank", "access_token="+apikey);
+    bank_fossils = bank_inv.filter(function(i) {
+        if (i == undefined) return false;
+        if (fossil_ids.indexOf(i["id"]) == -1) return false;
+        return true;
+      });
+    bank_fossil_ids = bank_fossils.map(function(f) {return f["id"];});
+    bank_unident = bank_inv.filter(function(i) {
+        if (i == undefined) return false;
+        if (i["id"] == ID_pristine_sand_carved_cache ||
+            i["id"] == ID_unidentified_insect) return true;
+        return false;
+      });
+
+    characters = api("characters.json", "access_token="+apikey);
+    char_fossils = {};
+    char_unident = {};
+    for (character in characters) {
+      items = api("characters/"+encodeURI(characters[character])+"/inventory.json",
+                  "access_token="+apikey);
+      for (b in items["bags"]) {
+        for (i in items["bags"][b]["inventory"]) {
+          item = items["bags"][b]["inventory"][i];
+          if (item != null && fossil_ids.indexOf(item["id"]) >= 0) {
+            char_fossils[item["id"]] = characters[character];
+          }
+          if (item != null && (item["id"] == ID_pristine_sand_carved_cache ||
+                               item["id"] == ID_unidentified_insect)) {
+            if (char_unident[character] == undefined)
+              char_unident[character] = 0;
+            char_unident[character] += 1;
+          }
+        }
+      }
+    }
+    // Get number of geodes
+    currencies = api("currencies.json", "ids="+api("currencies.json", "").toString());
+    geode_id = currencies.filter(function(c) { return c["name"]=="Geode"; })[0]["id"];
+    wallet = api("account/wallet", "access_token="+apikey);
+    geodes = wallet.filter(function(c) { return c["id"] == geode_id; })[0]["value"];
+
+    // Now assemble progress
+    fossils_needed = 0;
+    for (skin in skin_ids) {
+      html = html + "<tr><td>" + skins_info[skin]["name"] +
+                   "</td><td>" + fossils[skin]["name"].substring(19) +
+                   "</td>";
+      if (ambrite_progress["bits"].indexOf(parseInt(skin)) >= 0) {
+        html = html + "<td style='text-align:center;'>v</td>";
+        needed = false;
+      }
+      else {
+        html = html + "<td>&nbsp;</td>";
+        needed = true
+      }
+      if (recipes_known.indexOf(skins_info[skin]["recipe"]["id"]) >= 0) {
+        html = html + "<td style='text-align:center;'>v</td>";
+      }
+      else {
+        html = html + "<td>&nbsp;</td>";
+      }
+      if (bank_fossil_ids.indexOf(fossil_ids[skin]) >= 0) {
+        html = html + "<td style='text-align:center;'>Bank</td>";
+        needed = false;
+      }
+      else if (char_fossils[fossil_ids[skin]] != undefined) {
+        html = html + "<td style='text-align:center;'>"+char_fossils[fossil_ids[skin]]+"</td>";
+        needed = false;
+      }
+      else {
+        html = html + "<td>&nbsp;</td>";
+      }
+      html = html + "</tr>";
+      if (needed) fossils_needed += 1;
+    }
+    html = html + "</table>";
+    sum_unident = 0;
+    if (bank_unident.length > 0) {
+      html = html + "<p>"+bank_unident.length+" unidentified insects in bank.</p>";
+      sum_unident += bank_unident.length;
+    }
+    for (character in characters) {
+      if (char_unident[character] != undefined) {
+        html = html + "<p>Found "+char_unident[character]+ "unidentified insect(s) with "+
+               characters[character]+".</p>";
+        sum_unident += char_unident[character];
+      }
+    }
+    if (fossils_needed - sum_unident > 0) {
+      html = html + "<p>You still need to get "+(fossils_needed - sum_unident)+" more insects.</p>";
+    }
+    if (recipes_known.length < skins_info.length) {
+      needed = skins_info.length - recipes_known.length;
+      html = html + "<p>You need to buy "+needed+" more recipes, which at T6 "+
+             "will cost you "+(340*needed)+" Geodes. You currently have "+
+             geodes+" in your wallet";
+      if (340*needed > geodes)
+        html = html + ", which leaves "+(340*needed-geodes)+" Geodes to earn.</p>";
+      else
+        html = html + ", which means you are lucky and have enough for that already.</p>";
+    }
+    document.getElementById("content").innerHTML = html
+    //document.write(html);
+  }
+  function getapikey(form) {
+    apikey = form.apikey.value;
+    go(apikey);
+  }
+</script>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"
+        integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+        integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+        crossorigin="anonymous"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+        integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+
+<script src='js/main.js'></script>
+<script src="js/members.js"></script>
+
+<script>
+  (function(i, s, o, g, r, a, m) {
+    i['GoogleAnalyticsObject'] = r;
+    i[r] = i[r] || function() {
+          (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+    a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0];
+    a.async = 1;
+    a.src = g;
+    m.parentNode.insertBefore(a, m)
+  })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+  ga('create', 'UA-19228491-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>
