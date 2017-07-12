@@ -170,7 +170,7 @@
                                item["id"] == ID_unidentified_insect)) {
             if (char_unident[character] == undefined)
               char_unident[character] = 0;
-            char_unident[character] += 1;
+            char_unident[character] += item["count"];
           }
         }
       }
@@ -218,8 +218,12 @@
     html = html + "</table>";
     sum_unident = 0;
     if (bank_unident.length > 0) {
-      html = html + "<p>"+bank_unident.length+" unidentified insects in bank.</p>";
-      sum_unident += bank_unident.length;
+      sum_bank_unident = 0;
+      for (i in bank_unident) {
+         sum_bank_unident += bank_unident[i]["count"];
+      }
+      html = html + "<p>"+sum_bank_unident+" unidentified insects in bank.</p>";
+      sum_unident += sum_bank_unident;
     }
     for (character in characters) {
       if (char_unident[character] != undefined) {
