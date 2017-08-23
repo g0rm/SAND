@@ -88,8 +88,9 @@
     return data;
   }
   var go = function(apikey) {
-    document.getElementById("content").innerHTML = "Please wait - loading.";
+    document.getElementById("content").innerHTML = "Please wait - loading<br>...";
     var data = {};
+    document.getElementById("content").innerHTML += "<br>achievement and weapon data";
     // Get general information about achievement (bits, skins)
     var ambrite_general = api("achievements.json", "ids=1749")[0];
     // Get progress of specific player in the achievement
@@ -119,6 +120,7 @@
         weapons.push(items_using_nomad[r]);
       }
     }
+    document.getElementById("content").innerHTML += "<br>recipes";
     // Find unlocked recipes
     recipe_ids = skins_info.map(function(s) {
         return s["recipe"]["id"];
@@ -140,7 +142,9 @@
     }
     fossil_ids = fossils.map(function(f) {return f["id"];});
 
+    document.getElementById("content").innerHTML += "<br>searching account for insects";
     // Search account for insects
+    document.getElementById("content").innerHTML += "<br>...bank";
     bank_inv = api("account/bank", "access_token="+apikey);
     bank_fossils = bank_inv.filter(function(i) {
         if (i == undefined) return false;
@@ -159,6 +163,7 @@
     char_fossils = {};
     char_unident = {};
     for (character in characters) {
+      document.getElementById("content").innerHTML += "<br>..."+characters[character];
       items = api("characters/"+encodeURI(characters[character])+"/inventory.json",
                   "access_token="+apikey);
       for (b in items["bags"]) {
@@ -178,6 +183,7 @@
         }
       }
     }
+    document.getElementById("content").innerHTML += "<br>searching wallet for geodes";
     // Get number of geodes
     currencies = api("currencies.json", "ids="+api("currencies.json", "").toString());
     geode_id = currencies.filter(function(c) { return c["name"]=="Geode"; })[0]["id"];
