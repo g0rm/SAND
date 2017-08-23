@@ -161,16 +161,18 @@
       items = api("characters/"+encodeURI(characters[character])+"/inventory.json",
                   "access_token="+apikey);
       for (b in items["bags"]) {
-        for (i in items["bags"][b]["inventory"]) {
-          item = items["bags"][b]["inventory"][i];
-          if (item != null && fossil_ids.indexOf(item["id"]) >= 0) {
-            char_fossils[item["id"]] = characters[character];
-          }
-          if (item != null && (item["id"] == ID_pristine_sand_carved_cache ||
-                               item["id"] == ID_unidentified_insect)) {
-            if (char_unident[character] == undefined)
-              char_unident[character] = 0;
-            char_unident[character] += item["count"];
+        if (items["bags"][b] != null) {
+          for (i in items["bags"][b]["inventory"]) {
+            item = items["bags"][b]["inventory"][i];
+            if (item != null && fossil_ids.indexOf(item["id"]) >= 0) {
+              char_fossils[item["id"]] = characters[character];
+            }
+            if (item != null && (item["id"] == ID_pristine_sand_carved_cache ||
+                                 item["id"] == ID_unidentified_insect)) {
+              if (char_unident[character] == undefined)
+                char_unident[character] = 0;
+              char_unident[character] += item["count"];
+            }
           }
         }
       }
