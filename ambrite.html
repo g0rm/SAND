@@ -181,7 +181,10 @@
     currencies = api("currencies.json", "ids="+api("currencies.json", "").toString());
     geode_id = currencies.filter(function(c) { return c["name"]=="Geode"; })[0]["id"];
     wallet = api("account/wallet", "access_token="+apikey);
-    geodes = wallet.filter(function(c) { return c["id"] == geode_id; })[0]["value"];
+    geodes = 0;
+    if (wallet.filter(function(c) { return c["id"] == geode_id; })[0] != null) {
+      geodes = wallet.filter(function(c) { return c["id"] == geode_id; })[0]["value"];
+    }
 
     // Now assemble progress
     fossils_needed = 0;
