@@ -94,6 +94,7 @@
     var ambrite_general = api("achievements.json", "ids=1749")[0];
     // Get progress of specific player in the achievement
     var achievement_progress = api("account/achievements.json", "access_token="+apikey);
+    ambrite_progress={'bits': []};
     for (var a in achievement_progress) {
       if (achievement_progress[a]["id"] == 1749) {
         var ambrite_progress = achievement_progress[a];
