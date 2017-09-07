@@ -158,6 +158,13 @@
             i["id"] == ID_unidentified_insect) return true;
         return false;
       });
+    document.getElementById("content").innerHTML += "<br>...material storage";
+    mat_inv = api("account/materials", "access_token="+apikey);
+    mat_unident = mat_inv.filter(function(i) {
+        if (i == undefined) return false;
+        if (i["id"] == ID_unidentified_insect) return true;
+        return false;
+      });
 
     characters = api("characters.json", "access_token="+apikey);
     char_fossils = {};
@@ -237,6 +244,14 @@
       html = html + "<p>"+sum_bank_unident+" unidentified insects in bank.</p>";
       sum_unident += sum_bank_unident;
     }
+    if (mat_unident.length > 0) {
+      sum_mat_unident = 0;
+      for (i in mat_unident) {
+         sum_mat_unident += mat_unident[i]["count"];
+      }
+      html = html + "<p>"+sum_mat_unident+" unidentified insects in material storage.</p>";
+      sum_unident += sum_mat_unident;
+    }
     for (character in characters) {
       if (char_unident[character] != undefined) {
         html = html + "<p>Found "+char_unident[character]+ "unidentified insect(s) with "+
@@ -246,6 +261,12 @@
     }
     if (fossils_needed - sum_unident > 0) {
       html = html + "<p>You still need to get "+(fossils_needed - sum_unident)+" more insects.</p>";
+    }
+    if (fossils_needed - sum_unident <= 0) {
+      html = html + "<p>You have enough insects.</p>";
+    }
+    if (fossils_needed - sum_unident < 0) {
+      html = html + "<p>In fact, you have "+(sum_unident - fossils_needed)+" insects too much.</p>";
     }
     if (recipes_known.length < skins_info.length) {
       needed = skins_info.length - recipes_known.length;
