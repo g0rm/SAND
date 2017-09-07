@@ -158,6 +158,17 @@
             i["id"] == ID_unidentified_insect) return true;
         return false;
       });
+    bank_pristine_only = bank_inv.filter(function(i) {
+        if (i == undefined) return false;
+        if (i["id"] == ID_pristine_sand_carved_cache) return true;
+        return false;
+      });
+    if (bank_pristine_only.length > 0) {
+      sum_bank_pristine_only = 0;
+      for (i in bank_pristine_only) {
+         sum_bank_pristine_only += bank_pristine_only[i]["count"];
+      }
+    }
     document.getElementById("content").innerHTML += "<br>...material storage";
     mat_inv = api("account/materials", "access_token="+apikey);
     mat_unident = mat_inv.filter(function(i) {
@@ -169,6 +180,7 @@
     characters = api("characters.json", "access_token="+apikey);
     char_fossils = {};
     char_unident = {};
+    char_pristine_only = 0;
     for (character in characters) {
       document.getElementById("content").innerHTML += "<br>..."+characters[character];
       items = api("characters/"+encodeURI(characters[character])+"/inventory.json",
@@ -186,6 +198,9 @@
                 char_unident[character] = 0;
               char_unident[character] += item["count"];
             }
+            if (item != null && item["id"] == ID_pristine_sand_carved_cache) {
+              char_pristine_only += item["count"];
+            }
           }
         }
       }
@@ -199,6 +214,8 @@
     if (wallet.filter(function(c) { return c["id"] == geode_id; })[0] != null) {
       geodes = wallet.filter(function(c) { return c["id"] == geode_id; })[0]["value"];
     }
+    pristine_geodes = 100*(sum_bank_pristine_only + char_pristine_only);
+    geodes += pristine_geodes;
 
     // Now assemble progress
     fossils_needed = 0;
@@ -266,13 +283,16 @@
       html = html + "<p>You have enough insects.</p>";
     }
     if (fossils_needed - sum_unident < 0) {
-      html = html + "<p>In fact, you have "+(sum_unident - fossils_needed)+" insects too much.</p>";
+      html = html + "<p>In fact, you have "+(sum_unident - fossils_needed)+" insect(s) too much.</p>";
     }
     if (recipes_known.length < skins_info.length) {
       needed = skins_info.length - recipes_known.length;
       html = html + "<p>You need to buy "+needed+" more recipes, which at T6 "+
              "will cost you "+(340*needed)+" Geodes. You currently have "+
-             geodes+" in your wallet";
+             (geodes-pristine_geodes)+" in your wallet";
+      if (pristine_geodes > 0) {
+          html = html + " and at least "+pristine_geodes+" in Pristine Sand-Carved Cache(s))";
+      }
       if (340*needed > geodes)
         html = html + ", which leaves "+(340*needed-geodes)+" Geodes to earn.</p>";
       else
