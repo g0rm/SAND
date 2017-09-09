@@ -223,7 +223,8 @@
       html = html + "<tr><td>" + skins_info[skin]["name"] +
                    "</td><td>" + fossils[skin]["name"].substring(19) +
                    "</td>";
-      if (ambrite_progress["bits"].indexOf(parseInt(skin)) >= 0) {
+      if (ambrite_progress["done"] ||
+          ambrite_progress["bits"].indexOf(parseInt(skin)) >= 0) {
         html = html + "<td style='text-align:center;'>v</td>";
         needed = false;
       }
@@ -276,14 +277,19 @@
         sum_unident += char_unident[character];
       }
     }
-    if (fossils_needed - sum_unident > 0) {
-      html = html + "<p>You still need to get "+(fossils_needed - sum_unident)+" more insects.</p>";
+    if (ambrite_progress["done"]) {
+      html = html + "<p>You have the achievement, congratulations!</p>";
     }
-    if (fossils_needed - sum_unident <= 0) {
-      html = html + "<p>You have enough insects.</p>";
+    else {
+      if (fossils_needed - sum_unident > 0) {
+        html = html + "<p>You still need to get "+(fossils_needed - sum_unident)+" more insects.</p>";
+      }
+      if (fossils_needed - sum_unident <= 0) {
+        html = html + "<p>You have enough insects.</p>";
+      }
     }
     if (fossils_needed - sum_unident < 0) {
-      html = html + "<p>In fact, you have "+(sum_unident - fossils_needed)+" insect(s) too much.</p>";
+      html = html + "<p>You have a total of "+(sum_unident - fossils_needed)+" insect(s) leftover.</p>";
     }
     if (recipes_known.length < skins_info.length) {
       needed = skins_info.length - recipes_known.length;
