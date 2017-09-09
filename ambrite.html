@@ -163,8 +163,8 @@
         if (i["id"] == ID_pristine_sand_carved_cache) return true;
         return false;
       });
+    sum_bank_pristine_only = 0;
     if (bank_pristine_only.length > 0) {
-      sum_bank_pristine_only = 0;
       for (i in bank_pristine_only) {
          sum_bank_pristine_only += bank_pristine_only[i]["count"];
       }
